@@ -273,6 +273,12 @@ func (s *Etcd) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*st
 	// watchCh is sending back events to the caller
 	watchCh := make(chan []*store.KVPair)
 
+	// Check directory exist
+	_, err := s.List(directory)
+	if err != nil {
+		return nil, err
+	}
+
 	go func() {
 		defer close(watchCh)
 
