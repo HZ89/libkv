@@ -10,9 +10,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/HZ89/libkv"
+	"github.com/HZ89/libkv/store"
 	"github.com/boltdb/bolt"
-	"github.com/docker/libkv"
-	"github.com/docker/libkv/store"
 )
 
 var (

@@ -12,9 +12,9 @@ import (
     "time"
     "log"
 
-    "github.com/docker/libkv"
-    "github.com/docker/libkv/store"
-    "github.com/docker/libkv/store/consul"
+    "github.com/HZ89/libkv"
+    "github.com/HZ89/libkv/store"
+    "github.com/HZ89/libkv/store/consul"
 )
 
 func init() {
