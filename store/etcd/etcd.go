@@ -447,7 +447,7 @@ func (s *Etcd) DeleteTree(directory string) error {
 func (s *Etcd) NewLock(key string, options *store.LockOptions) (lock store.Locker, err error) {
 	var value string
 	ttl := defaultLockTTL
-	renewCh := make(chan struct{})
+	var renewCh chan struct{}
 
 	// Apply options on Lock
 	if options != nil {
@@ -547,8 +547,15 @@ func (l *etcdLock) Lock(stopChan chan struct{}) (<-chan struct{}, error) {
 // Updates the key ttl periodically until we receive
 // an explicit stop signal from the Unlock method
 func (l *etcdLock) holdLock(key string, lockHeld chan struct{}, stopLocking <-chan struct{}) {
-	defer close(lockHeld)
 
+	var renewCh chan struct{}
+
+	if lockHeld != nil {
+		renewCh = lockHeld
+	} else {
+		renewCh = make(chan struct{})
+	}
+	defer close(renewCh)
 	update := time.NewTicker(l.ttl / 3)
 	defer update.Stop()
 
@@ -557,12 +564,14 @@ func (l *etcdLock) holdLock(key string, lockHeld chan struct{}, stopLocking <-ch
 
 	for {
 		select {
-		case <-update.C:
+		case <-renewCh:
 			setOpts.PrevIndex = l.last.Node.ModifiedIndex
 			l.last, err = l.client.Set(context.Background(), key, l.value, setOpts)
 			if err != nil {
 				return
 			}
+		case <-update.C:
+			renewCh <- struct{}{}
 
 		case <-stopLocking:
 			return
