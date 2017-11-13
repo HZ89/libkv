@@ -553,7 +553,7 @@ func (l *etcdLock) holdLock(key string, lockHeld chan struct{}, stopLocking <-ch
 	if lockHeld != nil {
 		renewCh = lockHeld
 	} else {
-		renewCh = make(chan struct{})
+		renewCh = make(chan struct{}, 2)
 	}
 	defer close(renewCh)
 	update := time.NewTicker(l.ttl / 3)
@@ -571,7 +571,9 @@ func (l *etcdLock) holdLock(key string, lockHeld chan struct{}, stopLocking <-ch
 				return
 			}
 		case <-update.C:
-			renewCh <- struct{}{}
+			if lockHeld == nil {
+				renewCh <- struct{}{}
+			}
 
 		case <-stopLocking:
 			return
