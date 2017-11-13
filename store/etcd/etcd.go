@@ -30,13 +30,13 @@ type Etcd struct {
 }
 
 type etcdLock struct {
-	client    etcd.KeysAPI
-	stopLock  chan struct{}
-	stopRenew chan struct{}
-	key       string
-	value     string
-	last      *etcd.Response
-	ttl       time.Duration
+	client   etcd.KeysAPI
+	stopLock chan struct{}
+	renew    chan struct{}
+	key      string
+	value    string
+	last     *etcd.Response
+	ttl      time.Duration
 }
 
 const (
@@ -464,11 +464,11 @@ func (s *Etcd) NewLock(key string, options *store.LockOptions) (lock store.Locke
 
 	// Create lock object
 	lock = &etcdLock{
-		client:    s.client,
-		stopRenew: renewCh,
-		key:       s.normalize(key),
-		value:     value,
-		ttl:       ttl,
+		client: s.client,
+		renew:  renewCh,
+		key:    s.normalize(key),
+		value:  value,
+		ttl:    ttl,
 	}
 
 	return lock, nil
@@ -480,8 +480,8 @@ func (s *Etcd) NewLock(key string, options *store.LockOptions) (lock store.Locke
 func (l *etcdLock) Lock(stopChan chan struct{}) (<-chan struct{}, error) {
 
 	// Lock holder channel
-	lockHeld := make(chan struct{})
-	stopLocking := l.stopRenew
+	lockHeld := l.renew
+	stopLocking := make(chan struct{})
 
 	setOpts := &etcd.SetOptions{
 		TTL: l.ttl,
