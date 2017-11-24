@@ -299,18 +299,19 @@ func (s *Etcd) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*st
 			default:
 			}
 
-			_, err := watcher.Next(context.Background())
+			node, err := watcher.Next(context.Background())
 
 			if err != nil {
 				return
 			}
 
-			list, err = s.List(directory)
-			if err != nil {
-				return
+			kv := &store.KVPair{
+				Key:       node.Node.Key,
+				Value:     []byte(node.Node.Value),
+				LastIndex: node.Index,
 			}
 
-			watchCh <- list
+			watchCh <- []*store.KVPair{kv}
 		}
 	}()
 
